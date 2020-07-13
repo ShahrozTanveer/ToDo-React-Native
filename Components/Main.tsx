@@ -1,8 +1,20 @@
-import React from "react";
-import { View, Text, StyleSheet, Image, Dimensions } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Dimensions,
+  TouchableOpacity,
+} from "react-native";
+import { Todos } from "./Todos";
 interface MainProps {}
 const { width, height } = Dimensions.get("window");
 export const Main: React.FC<MainProps> = ({}) => {
+  const [isPressed, setIsPressed] = useState<Boolean>(false);
+  if (isPressed) {
+    return <Todos />;
+  }
   return (
     <View
       style={{
@@ -15,9 +27,14 @@ export const Main: React.FC<MainProps> = ({}) => {
         <Image source={require("../assets/main.jpg")} style={styles.imgStyle} />
       </View>
       <View style={styles.btnView}>
-        <View style={styles.button}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => {
+            setIsPressed(true);
+          }}
+        >
           <Text style={styles.text}>Get Started</Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );
