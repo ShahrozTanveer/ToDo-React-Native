@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -7,19 +7,65 @@ import {
   Button,
   Dimensions,
 } from "react-native";
+import AsyncStorage from "@react-native-community/async-storage";
 const { width, height } = Dimensions.get("window");
 interface Itodo {
   text: string;
   completed: boolean;
 }
+const clearAsyncStorage = async () => {
+  await AsyncStorage.clear();
+};
+
+const storeDataList = async (list: Itodo[]) => {
+  try {
+    const jsonValue = JSON.stringify(list);
+    console.log(jsonValue);
+    await AsyncStorage.setItem("@storage_Key", jsonValue);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const storeData = async (list: Itodo[], value: Itodo) => {
+  try {
+    const data = await [...list, value];
+    console.log(data);
+    const jsonValue = JSON.stringify(data);
+    console.log(jsonValue);
+    await AsyncStorage.setItem("@storage_Key", jsonValue);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+const getData: any = async () => {
+  try {
+    const jsonValue = await AsyncStorage.getItem("@storage_Key");
+    return jsonValue != null ? JSON.parse(jsonValue) : [];
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 export function Todos() {
   const [value, setValue] = useState<string>("");
   const [toDosList, setToDos] = useState<Itodo[]>([]);
   const [error, setError] = useState<Boolean>(false);
-
+  useEffect(() => {
+    const fn = async () => {
+      console.log("here");
+      const data = await getData();
+      console.log(data);
+      setToDos(data);
+    };
+    fn();
+  }, []);
   const handleSubmit = (): void => {
     if (value.trim()) {
-      setToDos([...toDosList, { text: value, completed: false }]);
+      const newData = { text: value, completed: false };
+      storeData(toDosList, newData);
+      setToDos([...toDosList, newData]);
     } else {
       setError(true);
     }
@@ -27,20 +73,30 @@ export function Todos() {
   };
 
   const removeItem = (index: number): void => {
-    const changedTodos = toDosList.filter((todo: Itodo, ind: number) => {
-      return ind !== index;
-    });
-    setToDos(changedTodos);
+    const fn = async () => {
+      const changedTodos = await toDosList.filter(
+        (todo: Itodo, ind: number) => {
+          return ind !== index;
+        }
+      );
+      setToDos(changedTodos);
+      storeDataList(toDosList);
+    };
+    fn();
   };
 
   const toggleComplete = (index: number): void => {
-    const changedTodos = toDosList.map((todo: Itodo, ind: number) => {
-      if (index === ind) {
-        todo.completed = !todo.completed;
-      }
-      return todo;
-    });
-    setToDos(changedTodos);
+    const fn = async () => {
+      const changedTodos = await toDosList.map((todo: Itodo, ind: number) => {
+        if (index === ind) {
+          todo.completed = !todo.completed;
+        }
+        return todo;
+      });
+      setToDos(changedTodos);
+      storeDataList(toDosList);
+    };
+    fn();
   };
   return (
     <View style={styles.container}>
@@ -59,7 +115,9 @@ export function Todos() {
       </View>
       {error && <Text style={styles.error}>Error: ToDo Field is empty.</Text>}
       <Text style={styles.subtitle}>Your Tasks :</Text>
-      {toDosList.length === 0 && <Text>No to do task available</Text>}
+      {(toDosList === null || toDosList.length === 0) && (
+        <Text>No to do task available</Text>
+      )}
       {toDosList.map((toDo: Itodo, index: number) => (
         <View style={styles.listItem} key={`${index}_${toDo.text}`}>
           <Text
